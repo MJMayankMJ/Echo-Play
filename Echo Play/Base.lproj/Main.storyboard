@@ -98,7 +98,13 @@
                             <constraint firstItem="das-Xi-Lp3" firstAttribute="top" secondItem="JCu-Dh-njS" secondAttribute="top" id="v6e-vb-b4k"/>
                         </constraints>
                     </view>
-                    <navigationItem key="navigationItem" title="Songs" id="XPp-tn-wpj"/>
+                    <navigationItem key="navigationItem" title="Songs" id="XPp-tn-wpj">
+                        <barButtonItem key="rightBarButtonItem" title="Item" image="plus" catalog="system" id="PmJ-cQ-SRa">
+                            <connections>
+                                <action selector="addSongButtonTapped:" destination="afS-pZ-wf1" id="7LV-nT-VcV"/>
+                            </connections>
+                        </barButtonItem>
+                    </navigationItem>
                     <connections>
                         <outlet property="tableView" destination="das-Xi-Lp3" id="Vbq-rJ-ccg"/>
                     </connections>
@@ -276,6 +282,7 @@
         <image name="music.note" catalog="system" width="96" height="128"/>
         <image name="music.note.list" catalog="system" width="128" height="115"/>
         <image name="play.fill" catalog="system" width="120" height="128"/>
+        <image name="plus" catalog="system" width="128" height="113"/>
         <image name="video.fill" catalog="system" width="128" height="81"/>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
