@@ -6,26 +6,26 @@
 //
 
 import UIKit
+import MediaPlayer
 
 class MusicViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
-    
+
     @IBOutlet weak var tableView: UITableView!
     
+    // Your list of song URLs
     var songURLs: [URL] = [
-        URL(string: "https://example.com/song1.mp3")!,
+        URL(string: "https://www.learningcontainer.com/wp-content/uploads/2020/02/Kalimba.mp3")!,
         URL(string: "https://example.com/song2.mp3")!,
         URL(string: "https://example.com/song3.mp3")!
     ]
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
         tableView.delegate = self
         tableView.dataSource = self
     }
     
-    // MARK: + button
-    
+    // MARK: - IBAction for adding a song via URL
     @IBAction func addSongButtonTapped(_ sender: UIBarButtonItem) {
         let alert = UIAlertController(title: "Add Song",
                                       message: "Enter the URL of the song",
@@ -38,11 +38,9 @@ class MusicViewController: UIViewController, UITableViewDelegate, UITableViewDat
         let addAction = UIAlertAction(title: "Add", style: .default) { [weak self] _ in
             guard let self = self,
                   let text = alert.textFields?.first?.text,
-                  let url = URL(string: text) else {
-                return
-            }
+                  let url = URL(string: text) else { return }
             
-            // validatn
+            // Validate file extension
             let validExtensions = ["mp3", "wav", "m4a"]
             let fileExtension = url.pathExtension.lowercased()
             
@@ -59,14 +57,20 @@ class MusicViewController: UIViewController, UITableViewDelegate, UITableViewDat
         }
         
         let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
-        
         alert.addAction(addAction)
         alert.addAction(cancelAction)
-        
         present(alert, animated: true)
     }
     
-    // MARK: - Data Source
+//    // MARK: - IBAction for picking a song from the Music Library
+//    @IBAction func pickSongFromLibraryButtonTapped(_ sender: UIBarButtonItem) {
+//        let mediaPicker = MPMediaPickerController(mediaTypes: .music)
+//        mediaPicker.delegate = self
+//        mediaPicker.allowsPickingMultipleItems = false
+//        present(mediaPicker, animated: true)
+//    }
+    
+    // MARK: - UITableViewDataSource Methods
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return songURLs.count
@@ -79,33 +83,45 @@ class MusicViewController: UIViewController, UITableViewDelegate, UITableViewDat
         }
         
         let audioURL = songURLs[indexPath.row]
-        
-        // using the URL's last path component for the title
         cell.titleLabel.text = audioURL.lastPathComponent
-        
-        // default image, or use your own asset
         cell.iconImageView.image = UIImage(systemName: "music.note")
-        
-        // fill durationLabel if you have a way to get the duration, otherwise leave blank
         cell.durationLabel.text = ""
-        
         return cell
     }
     
-    // MARK: - Delegate
+    // MARK: - UITableViewDelegate Methods
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let storyboard = UIStoryboard(name: "Main", bundle: nil)
         if let playerVC = storyboard.instantiateViewController(withIdentifier: "PlayerViewController") as? PlayerViewController {
-            
-            let audioURL = songURLs[indexPath.row]
-            AudioPlayerManager.shared.playSound(from: audioURL)
-            
+            playerVC.audioURL = songURLs[indexPath.row]
             navigationController?.pushViewController(playerVC, animated: true)
         }
     }
+
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return tableView.frame.width / 4.0
+    }
+}
+
+// MARK: - MPMediaPickerControllerDelegate Methods
+
+extension MusicViewController: MPMediaPickerControllerDelegate {
+    func mediaPicker(_ mediaPicker: MPMediaPickerController, didPickMediaItems mediaItemCollection: MPMediaItemCollection) {
+        dismiss(animated: true, completion: nil)
+        
+        if let item = mediaItemCollection.items.first, let assetURL = item.assetURL {
+            songURLs.append(assetURL)
+            tableView.reloadData()
+        } else {
+            let alert = UIAlertController(title: "Error", message: "Could not get the selected song.", preferredStyle: .alert)
+            alert.addAction(UIAlertAction(title: "OK", style: .default))
+            present(alert, animated: true)
+        }
+    }
+    
+    func mediaPickerDidCancel(_ mediaPicker: MPMediaPickerController) {
+        dismiss(animated: true, completion: nil)
     }
 }

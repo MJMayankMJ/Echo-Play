@@ -38,7 +38,7 @@ class AudioPlayerManager: NSObject {
     private var loadedTitle: String = "Unknown Title"
     private var loadedArtist: String = "Unknown Artist"
     private var loadedAlbum: String = "Unknown Album"
-    private var loadedArtwork: UIImage = UIImage(named: "logo")!
+    private var loadedArtwork: UIImage = UIImage(systemName: "music.note.list")!
     
     // MARK: - Init
     
@@ -171,10 +171,10 @@ class AudioPlayerManager: NSObject {
             generator.generateCGImagesAsynchronously(forTimes: [NSValue(time: time)]) {
                 requestedTime, cgImage, actualTime, result, error in
                 guard let cgImage = cgImage, error == nil else {
-                    // fallback image if we can't generate a thumbnail
-                    continuation.resume(returning: UIImage(named: "logo")!)
+                    continuation.resume(returning: UIImage(systemName: "music.note.list")!)
                     return
                 }
+
                 continuation.resume(returning: UIImage(cgImage: cgImage))
             }
         }

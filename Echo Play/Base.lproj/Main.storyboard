@@ -101,7 +101,7 @@
                     <navigationItem key="navigationItem" title="Songs" id="XPp-tn-wpj">
                         <barButtonItem key="rightBarButtonItem" title="Item" image="plus" catalog="system" id="PmJ-cQ-SRa">
                             <connections>
-                                <action selector="addSongButtonTapped:" destination="afS-pZ-wf1" id="7LV-nT-VcV"/>
+                                <action selector="addSongButtonTapped:" destination="afS-pZ-wf1" id="W4o-Iz-8gA"/>
                             </connections>
                         </barButtonItem>
                     </navigationItem>

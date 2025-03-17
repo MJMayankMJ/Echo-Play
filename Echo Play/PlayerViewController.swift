@@ -9,6 +9,8 @@ import UIKit
 
 class PlayerViewController: UIViewController {
     
+    var audioURL: URL?
+    
     // MARK: - Outlets
     @IBOutlet weak var slider: UISlider!
     @IBOutlet weak var currentTimeLabel: UILabel!
@@ -19,7 +21,14 @@ class PlayerViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        AudioPlayerManager.shared.delegate = self
+        super.viewDidLoad()
+            AudioPlayerManager.shared.delegate = self
+            // Set up UI...
+            if let url = audioURL {
+                AudioPlayerManager.shared.playSound(from: url)
+            } else if let bundledURL = Bundle.main.url(forResource: "YourPoisonNCS", withExtension: "mp3") {
+                AudioPlayerManager.shared.playSound(from: bundledURL)
+            }
         
         // initialize UI
         slider.minimumValue = 0
@@ -31,10 +40,10 @@ class PlayerViewController: UIViewController {
         
         titleLabel.text = AudioPlayerManager.shared.audioTitle
         
-        // Example: load an MP3 from your app bundle
-        if let audioURL = Bundle.main.url(forResource: "YourPoisonNCS", withExtension: "mp3") {
-            AudioPlayerManager.shared.playSound(from: audioURL)
-        }
+//        // Example: load an MP3 from your app bundle
+//        if let audioURL = Bundle.main.url(forResource: "YourPoisonNCS", withExtension: "mp3") {
+//            AudioPlayerManager.shared.playSound(from: audioURL)
+//        }
     }
     
     @IBAction func sliderValueChanged(_ sender: UISlider) {
