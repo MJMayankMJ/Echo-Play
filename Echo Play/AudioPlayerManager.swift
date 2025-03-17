@@ -8,6 +8,7 @@
 import Foundation
 import AVFoundation
 import MediaPlayer
+import UIKit
 
 @objc protocol AudioPlayerManagerDelegate: AnyObject {
     @objc optional func audioPlayerManagerDidChangeState(_ manager: AudioPlayerManager)
@@ -16,29 +17,40 @@ import MediaPlayer
 }
 
 class AudioPlayerManager: NSObject {
-    
     static let shared = AudioPlayerManager()
-    
     weak var delegate: AudioPlayerManagerDelegate?
     
     private var player: AVAudioPlayer?
     private var durationUpdateTimer: Timer?
     
+    // Basic properties
     var audioTitle: String = "Unknown title"
+    var isPlayerMuted: Bool = false {
+        didSet {
+            player?.volume = isPlayerMuted ? 0.0 : 1.0
+        }
+    }
     
     var isPlaying: Bool {
         return player?.isPlaying ?? false
     }
     
-    var isPlayerMuted: Bool = false {
-        didSet {
-            if let player{
-                player.volume = isPlayerMuted ? 0.0 : 1.0
-            }}}
+    // Cached metadata/artwork
+    private var loadedTitle: String = "Unknown Title"
+    private var loadedArtist: String = "Unknown Artist"
+    private var loadedAlbum: String = "Unknown Album"
+    private var loadedArtwork: UIImage = UIImage(named: "logo")!
+    
+    // MARK: - Init
     
     private override init() {
         super.init()
-        NotificationCenter.default.addObserver(self, selector: #selector(audioSessionInterrupted), name: AVAudioSession.interruptionNotification, object: nil)
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(audioSessionInterrupted),
+            name: AVAudioSession.interruptionNotification,
+            object: nil
+        )
     }
     
     @objc private func audioSessionInterrupted(notification: Notification) {
@@ -55,91 +67,27 @@ class AudioPlayerManager: NSObject {
         }
     }
     
-    func updateNowPlayingInfo() {
-        guard let player = player else { return }
-        
-        var nowPlayingInfo = [String: Any]()
-        
-        // Extract metadata from the audio file
-        if let audioURL = player.url {
-            let asset = AVURLAsset(url: audioURL)
-            let metadata = asset.metadata(forFormat: .id3Metadata)
-            
-            // Extract the title, artist, and album from the metadata
-            var title: String?
-            var artist: String?
-            var album: String?
-            
-            for item in metadata {
-                if let commonKey = item.commonKey {
-                    switch commonKey {
-                    case .commonKeyTitle:
-                        title = item.value as? String
-                        audioTitle = item.value as? String ?? "Unknown title"
-                    case .commonKeyArtist:
-                        artist = item.value as? String
-                    case .commonKeyAlbumName:
-                        album = item.value as? String
-                    case .commonKeyArtwork:
-                        break
-                    default:
-                        break
-                    }
-                }
-            }
-            
-            // Fallback to default values if metadata is not available
-            nowPlayingInfo[MPMediaItemPropertyTitle] = title ?? "Unknown Title"
-            nowPlayingInfo[MPMediaItemPropertyArtist] = artist ?? "Unknown Artist"
-            nowPlayingInfo[MPMediaItemPropertyAlbumTitle] = album ?? "Unknown Album"
-        }
-
-       
-        nowPlayingInfo[MPMediaItemPropertyArtwork] = MPMediaItemArtwork(boundsSize: getThumbnail(from: player.url!).size) { _ in self.getThumbnail(from: player.url!) }
-        
-        // Set the duration and current playback time
-        nowPlayingInfo[MPMediaItemPropertyPlaybackDuration] = player.duration
-        nowPlayingInfo[MPNowPlayingInfoPropertyElapsedPlaybackTime] = player.currentTime
-        nowPlayingInfo[MPNowPlayingInfoPropertyPlaybackRate] = player.isPlaying ? 1.0 : 0.0
-        
-        MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
-    }
-
-    func getThumbnail(from audioURL: URL) -> UIImage {
-        let asset = AVURLAsset(url: audioURL)
-        let imageGenerator = AVAssetImageGenerator(asset: asset)
-        imageGenerator.appliesPreferredTrackTransform = true
-        var image: UIImage?
-        
-        // Generate the image from the first frame (or any specific time)
-        do {
-            let cgImage = try imageGenerator.copyCGImage(at: CMTimeMake(value: 0, timescale: 1), actualTime: nil)
-            image = UIImage(cgImage: cgImage)
-        } catch {
-//            print("Error generating thumbnail: \(error)")
-        }
-        
-        return image ?? UIImage(named: "logo")!
-    }
+    // MARK: - Public Audio Control
     
-    func playSound(from audioURL: URL, extension ext: String = "mp3"){
-        self.stop()
-        
+    func playSound(from audioURL: URL) {
+        stop()
         configureAudioSession()
         
         do {
-            try AVAudioSession.sharedInstance().setCategory(.playback)
-            try AVAudioSession.sharedInstance().setActive(true)
-            player = try? AVAudioPlayer(contentsOf: audioURL)
+            player = try AVAudioPlayer(contentsOf: audioURL)
             player?.prepareToPlay()
             player?.delegate = self
             player?.play()
+            
+            // Load metadata asynchronously and then update Now Playing info
+            Task {
+                await loadMetadataAndArtwork(for: audioURL)
+                updateNowPlayingInfo()
+            }
+            
             startDurationUpdateTimer()
             delegate?.audioPlayerManagerDidChangeState?(self)
-            
-            updateNowPlayingInfo()
-        }
-        catch let error{
+        } catch {
             print("Error initializing audio player: \(error)")
         }
     }
@@ -173,24 +121,106 @@ class AudioPlayerManager: NSObject {
     }
     
     func getDuration() -> TimeInterval {
-        print(player?.duration ?? 0)
         return player?.duration ?? 0
     }
+    
+    // MARK: - Metadata and Artwork (iOS 18+)
+    
+    /// Loads ID3 metadata and generates a thumbnail image from the first frame.
+    private func loadMetadataAndArtwork(for url: URL) async {
+        let asset = AVURLAsset(url: url)
+        
+        do {
+            // 1. Load ID3 metadata
+            let metadataItems = try await asset.loadMetadata(for: .id3Metadata)
+            for item in metadataItems {
+                guard let key = item.commonKey else { continue }
+                
+                switch key {
+                case .commonKeyTitle:
+                    if let titleValue = try? await item.load(.value) as? String {
+                        loadedTitle = titleValue
+                        audioTitle = titleValue
+                    }
+                case .commonKeyArtist:
+                    if let artistValue = try? await item.load(.value) as? String {
+                        loadedArtist = artistValue
+                    }
+                case .commonKeyAlbumName:
+                    if let albumValue = try? await item.load(.value) as? String {
+                        loadedAlbum = albumValue
+                    }
+                default:
+                    break
+                }
+            }
+            
+            // 2. Generate a thumbnail image from the first frame
+            loadedArtwork = await generateThumbnail(asset: asset)
+        } catch {
+            print("Error loading metadata: \(error)")
+        }
+    }
+    
+    /// Asynchronously generates a CGImage for the first frame using iOS 18+ API.
+    private func generateThumbnail(asset: AVURLAsset) async -> UIImage {
+        let generator = AVAssetImageGenerator(asset: asset)
+        generator.appliesPreferredTrackTransform = true
+        
+        // We'll request a frame at time = 0
+        let time = CMTimeMake(value: 0, timescale: 1)
+        
+        return await withCheckedContinuation { continuation in
+            generator.generateCGImagesAsynchronously(forTimes: [NSValue(time: time)]) {
+                requestedTime, cgImage, actualTime, result, error in
+                guard let cgImage = cgImage, error == nil else {
+                    // Fallback image if we can't generate a thumbnail
+                    continuation.resume(returning: UIImage(named: "logo")!)
+                    return
+                }
+                continuation.resume(returning: UIImage(cgImage: cgImage))
+            }
+        }
+    }
+    
+    // MARK: - Now Playing Info
+    
+    private func updateNowPlayingInfo() {
+        guard let player = player else { return }
+        
+        var nowPlayingInfo: [String: Any] = [:]
+        nowPlayingInfo[MPMediaItemPropertyTitle] = loadedTitle
+        nowPlayingInfo[MPMediaItemPropertyArtist] = loadedArtist
+        nowPlayingInfo[MPMediaItemPropertyAlbumTitle] = loadedAlbum
+        
+        nowPlayingInfo[MPMediaItemPropertyArtwork] = MPMediaItemArtwork(
+            boundsSize: loadedArtwork.size,
+            requestHandler: { _ in
+                return self.loadedArtwork
+            }
+        )
+        
+        nowPlayingInfo[MPMediaItemPropertyPlaybackDuration] = player.duration
+        nowPlayingInfo[MPNowPlayingInfoPropertyElapsedPlaybackTime] = player.currentTime
+        nowPlayingInfo[MPNowPlayingInfoPropertyPlaybackRate] = player.isPlaying ? 1.0 : 0.0
+        
+        MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
+    }
 }
+
+// MARK: - Timer Updates
 
 extension AudioPlayerManager {
     private func startDurationUpdateTimer() {
         stopDurationUpdateTimer()
-        
-        durationUpdateTimer = Timer.scheduledTimer(
-            withTimeInterval: 0.01,
-            repeats: true,
-            block: { [weak self] _ in
-                guard let self = self, let currentTime = self.player?.currentTime, isPlaying else { return }
-                self.delegate?.audioPlayerManager?(self, didUpdateDuration: currentTime)
-                self.updateNowPlayingInfo()
-            }
-        )
+        durationUpdateTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
+            guard let self = self,
+                  let currentTime = self.player?.currentTime,
+                  self.isPlaying else { return }
+            
+            self.delegate?.audioPlayerManager?(self, didUpdateDuration: currentTime)
+            self.updateNowPlayingInfo()
+        }
     }
     
     private func stopDurationUpdateTimer() {
@@ -198,6 +228,8 @@ extension AudioPlayerManager {
         durationUpdateTimer = nil
     }
 }
+
+// MARK: - AVAudioPlayerDelegate
 
 extension AudioPlayerManager: AVAudioPlayerDelegate {
     func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {

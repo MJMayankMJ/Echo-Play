@@ -43,7 +43,7 @@ class MusicViewController: UIViewController, UITableViewDelegate, UITableViewDat
             }
             
             // validatn
-            let validExtensions = ["mp3", "wav", "m4a", "mp4"]
+            let validExtensions = ["mp3", "wav", "m4a"]
             let fileExtension = url.pathExtension.lowercased()
             
             if validExtensions.contains(fileExtension) {
@@ -51,7 +51,7 @@ class MusicViewController: UIViewController, UITableViewDelegate, UITableViewDat
                 self.tableView.reloadData()
             } else {
                 let errorAlert = UIAlertController(title: "Invalid URL",
-                                                   message: "Only .mp3, .mp4, .wav, or .m4a are allowed.",
+                                                   message: "Only .mp3, .wav, or .m4a are allowed.",
                                                    preferredStyle: .alert)
                 errorAlert.addAction(UIAlertAction(title: "OK", style: .default))
                 self.present(errorAlert, animated: true)
