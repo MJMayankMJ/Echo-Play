@@ -35,7 +35,6 @@ class AudioPlayerManager: NSObject {
         return player?.isPlaying ?? false
     }
     
-    // Cached metadata/artwork
     private var loadedTitle: String = "Unknown Title"
     private var loadedArtist: String = "Unknown Artist"
     private var loadedAlbum: String = "Unknown Album"
@@ -79,7 +78,6 @@ class AudioPlayerManager: NSObject {
             player?.delegate = self
             player?.play()
             
-            // Load metadata asynchronously and then update Now Playing info
             Task {
                 await loadMetadataAndArtwork(for: audioURL)
                 updateNowPlayingInfo()
@@ -126,12 +124,12 @@ class AudioPlayerManager: NSObject {
     
     // MARK: - Metadata and Artwork (iOS 18+)
     
-    /// Loads ID3 metadata and generates a thumbnail image from the first frame.
+    // load metadata and generates a thumbnail image from the first frame.
     private func loadMetadataAndArtwork(for url: URL) async {
         let asset = AVURLAsset(url: url)
         
         do {
-            // 1. Load ID3 metadata
+            // 1. load metadata
             let metadataItems = try await asset.loadMetadata(for: .id3Metadata)
             for item in metadataItems {
                 guard let key = item.commonKey else { continue }
@@ -162,7 +160,6 @@ class AudioPlayerManager: NSObject {
         }
     }
     
-    /// Asynchronously generates a CGImage for the first frame using iOS 18+ API.
     private func generateThumbnail(asset: AVURLAsset) async -> UIImage {
         let generator = AVAssetImageGenerator(asset: asset)
         generator.appliesPreferredTrackTransform = true
@@ -174,7 +171,7 @@ class AudioPlayerManager: NSObject {
             generator.generateCGImagesAsynchronously(forTimes: [NSValue(time: time)]) {
                 requestedTime, cgImage, actualTime, result, error in
                 guard let cgImage = cgImage, error == nil else {
-                    // Fallback image if we can't generate a thumbnail
+                    // fallback image if we can't generate a thumbnail
                     continuation.resume(returning: UIImage(named: "logo")!)
                     return
                 }
