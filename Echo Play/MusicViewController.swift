@@ -26,41 +26,82 @@ class MusicViewController: UIViewController, UITableViewDelegate, UITableViewDat
     }
     
     // MARK: - IBAction for adding a song via URL
+//    @IBAction func addSongButtonTapped(_ sender: UIBarButtonItem) {
+//        let alert = UIAlertController(title: "Add Song",
+//                                      message: "Enter the URL of the song",
+//                                      preferredStyle: .alert)
+//        
+//        alert.addTextField { textField in
+//            textField.placeholder = "https://example.com/song.mp3"
+//        }
+//        
+//        let addAction = UIAlertAction(title: "Add", style: .default) { [weak self] _ in
+//            guard let self = self,
+//                  let text = alert.textFields?.first?.text,
+//                  let url = URL(string: text) else { return }
+//            
+//            // Validate file extension
+//            let validExtensions = ["mp3", "wav", "m4a"]
+//            let fileExtension = url.pathExtension.lowercased()
+//            
+//            if validExtensions.contains(fileExtension) {
+//                self.songURLs.append(url)
+//                self.tableView.reloadData()
+//            } else {
+//                let errorAlert = UIAlertController(title: "Invalid URL",
+//                                                   message: "Only .mp3, .wav, or .m4a are allowed.",
+//                                                   preferredStyle: .alert)
+//                errorAlert.addAction(UIAlertAction(title: "OK", style: .default))
+//                self.present(errorAlert, animated: true)
+//            }
+//        }
+//        
+//        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
+//        alert.addAction(addAction)
+//        alert.addAction(cancelAction)
+//        present(alert, animated: true)
+//    }
+    
+    // IBAction for the + button using FileManager to pick a downloaded MP3 file
     @IBAction func addSongButtonTapped(_ sender: UIBarButtonItem) {
-        let alert = UIAlertController(title: "Add Song",
-                                      message: "Enter the URL of the song",
-                                      preferredStyle: .alert)
+        // Locate the "Music" folder inside your app's Documents directory
+        guard let musicDirectory = FileManager.default
+            .urls(for: .documentDirectory, in: .userDomainMask)
+            .first?
+            .appendingPathComponent("Music") else { return }
         
-        alert.addTextField { textField in
-            textField.placeholder = "https://example.com/song.mp3"
-        }
-        
-        let addAction = UIAlertAction(title: "Add", style: .default) { [weak self] _ in
-            guard let self = self,
-                  let text = alert.textFields?.first?.text,
-                  let url = URL(string: text) else { return }
+        do {
+            // Get list of files in the Music folder
+            let files = try FileManager.default.contentsOfDirectory(at: musicDirectory, includingPropertiesForKeys: nil, options: [])
+            // Filter only for MP3 files
+            let mp3Files = files.filter { $0.pathExtension.lowercased() == "mp3" }
             
-            // Validate file extension
-            let validExtensions = ["mp3", "wav", "m4a"]
-            let fileExtension = url.pathExtension.lowercased()
-            
-            if validExtensions.contains(fileExtension) {
-                self.songURLs.append(url)
-                self.tableView.reloadData()
+            if mp3Files.isEmpty {
+                let alert = UIAlertController(title: "No Files", message: "No MP3 files found in your Music folder.", preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: "OK", style: .default))
+                present(alert, animated: true)
             } else {
-                let errorAlert = UIAlertController(title: "Invalid URL",
-                                                   message: "Only .mp3, .wav, or .m4a are allowed.",
-                                                   preferredStyle: .alert)
-                errorAlert.addAction(UIAlertAction(title: "OK", style: .default))
-                self.present(errorAlert, animated: true)
+                // action sheet listing each MP3 file
+                let actionSheet = UIAlertController(title: "Select a Song", message: nil, preferredStyle: .actionSheet)
+                for file in mp3Files {
+                    let action = UIAlertAction(title: file.lastPathComponent, style: .default) { [weak self] _ in
+                        self?.songURLs.append(file)
+                        self?.tableView.reloadData()
+                    }
+                    actionSheet.addAction(action)
+                }
+                actionSheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+                // iPad .....
+                if let popover = actionSheet.popoverPresentationController {
+                    popover.barButtonItem = sender
+                }
+                present(actionSheet, animated: true)
             }
+        } catch {
+            print("Error accessing Music folder: \(error)")
         }
-        
-        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
-        alert.addAction(addAction)
-        alert.addAction(cancelAction)
-        present(alert, animated: true)
     }
+
     
 //    // MARK: - IBAction for picking a song from the Music Library
 //    @IBAction func pickSongFromLibraryButtonTapped(_ sender: UIBarButtonItem) {
