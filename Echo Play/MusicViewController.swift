@@ -6,132 +6,136 @@
 //
 
 import UIKit
+import UniformTypeIdentifiers
 import MediaPlayer
 
-class MusicViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
-
+class MusicViewController: UIViewController {
+    
     @IBOutlet weak var tableView: UITableView!
     
-    // Your list of song URLs
-    var songURLs: [URL] = [
-        URL(string: "https://www.learningcontainer.com/wp-content/uploads/2020/02/Kalimba.mp3")!,
-        URL(string: "https://example.com/song2.mp3")!,
-        URL(string: "https://example.com/song3.mp3")!
-    ]
+    // Array to hold URLs of songs stored in Documents/Songs
+    var songURLs: [URL] = []
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
         tableView.delegate = self
         tableView.dataSource = self
+        
+        // Create the Songs folder (if needed) and load any saved songs.
+        createSongsFolder()
+        loadSongsFromDocumentsFolder()
     }
     
-    // MARK: - IBAction for adding a song via URL
-//    @IBAction func addSongButtonTapped(_ sender: UIBarButtonItem) {
-//        let alert = UIAlertController(title: "Add Song",
-//                                      message: "Enter the URL of the song",
-//                                      preferredStyle: .alert)
-//        
-//        alert.addTextField { textField in
-//            textField.placeholder = "https://example.com/song.mp3"
-//        }
-//        
-//        let addAction = UIAlertAction(title: "Add", style: .default) { [weak self] _ in
-//            guard let self = self,
-//                  let text = alert.textFields?.first?.text,
-//                  let url = URL(string: text) else { return }
-//            
-//            // Validate file extension
-//            let validExtensions = ["mp3", "wav", "m4a"]
-//            let fileExtension = url.pathExtension.lowercased()
-//            
-//            if validExtensions.contains(fileExtension) {
-//                self.songURLs.append(url)
-//                self.tableView.reloadData()
-//            } else {
-//                let errorAlert = UIAlertController(title: "Invalid URL",
-//                                                   message: "Only .mp3, .wav, or .m4a are allowed.",
-//                                                   preferredStyle: .alert)
-//                errorAlert.addAction(UIAlertAction(title: "OK", style: .default))
-//                self.present(errorAlert, animated: true)
-//            }
-//        }
-//        
-//        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel)
-//        alert.addAction(addAction)
-//        alert.addAction(cancelAction)
-//        present(alert, animated: true)
-//    }
-    
-    // IBAction for the + button using FileManager to pick a downloaded MP3 file
-    @IBAction func addSongButtonTapped(_ sender: UIBarButtonItem) {
-        // Locate the "Music" folder inside your app's Documents directory
-        guard let musicDirectory = FileManager.default
-            .urls(for: .documentDirectory, in: .userDomainMask)
-            .first?
-            .appendingPathComponent("Music") else { return }
+    // MARK: - Create "Songs" Folder at App Launch
+    private func createSongsFolder() {
+        let fileManager = FileManager.default
+        guard let documentsDirectory = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
+        let songsFolder = documentsDirectory.appendingPathComponent("Songs")
         
-        do {
-            // Get list of files in the Music folder
-            let files = try FileManager.default.contentsOfDirectory(at: musicDirectory, includingPropertiesForKeys: nil, options: [])
-            // Filter only for MP3 files
-            let mp3Files = files.filter { $0.pathExtension.lowercased() == "mp3" }
-            
-            if mp3Files.isEmpty {
-                let alert = UIAlertController(title: "No Files", message: "No MP3 files found in your Music folder.", preferredStyle: .alert)
-                alert.addAction(UIAlertAction(title: "OK", style: .default))
-                present(alert, animated: true)
-            } else {
-                // action sheet listing each MP3 file
-                let actionSheet = UIAlertController(title: "Select a Song", message: nil, preferredStyle: .actionSheet)
-                for file in mp3Files {
-                    let action = UIAlertAction(title: file.lastPathComponent, style: .default) { [weak self] _ in
-                        self?.songURLs.append(file)
-                        self?.tableView.reloadData()
-                    }
-                    actionSheet.addAction(action)
-                }
-                actionSheet.addAction(UIAlertAction(title: "Cancel", style: .cancel))
-                // iPad .....
-                if let popover = actionSheet.popoverPresentationController {
-                    popover.barButtonItem = sender
-                }
-                present(actionSheet, animated: true)
+        if !fileManager.fileExists(atPath: songsFolder.path) {
+            do {
+                try fileManager.createDirectory(at: songsFolder, withIntermediateDirectories: true, attributes: nil)
+                print("Songs folder created.")
+            } catch {
+                print("Error creating Songs folder: \(error)")
             }
-        } catch {
-            print("Error accessing Music folder: \(error)")
         }
     }
+    
+    // MARK: - Load MP3 Files from "Songs" Folder
+    private func loadSongsFromDocumentsFolder() {
+        let fileManager = FileManager.default
+        guard let documentsDirectory = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
+        let songsFolder = documentsDirectory.appendingPathComponent("Songs")
+        
+        do {
+            let allFiles = try fileManager.contentsOfDirectory(at: songsFolder, includingPropertiesForKeys: nil, options: [])
+            let mp3Files = allFiles.filter { $0.pathExtension.lowercased() == "mp3" }
+            songURLs = mp3Files
+            tableView.reloadData()
+        } catch {
+            print("Error reading Songs folder: \(error)")
+        }
+    }
+    
+    // MARK: - IBAction for Adding a Song (+ Button)
+    @IBAction func addSongButtonTapped(_ sender: UIBarButtonItem) {
+        // Present a document picker to select an audio file.
+        let picker = UIDocumentPickerViewController(forOpeningContentTypes: [UTType.audio], asCopy: true)
+        picker.delegate = self
+        picker.allowsMultipleSelection = false
+        
+        // For iPad: present from the bar button.
+        if let popover = picker.popoverPresentationController {
+            popover.barButtonItem = sender
+        }
+        present(picker, animated: true)
+    }
+    
+    // MARK: - Save Song to "Songs" Folder
+    private func saveSongToDocumentsFolder(songURL: URL) {
+        let fileManager = FileManager.default
+        guard let documentsDirectory = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
+        let songsFolder = documentsDirectory.appendingPathComponent("Songs")
+        
+        // (The Songs folder should already exist from createSongsFolder())
+        var destinationURL = songsFolder.appendingPathComponent(songURL.lastPathComponent)
+        var fileIndex = 1
+        
+        // Avoid collisions by appending a counter if needed.
+        while fileManager.fileExists(atPath: destinationURL.path) {
+            let newName = "\(songURL.deletingPathExtension().lastPathComponent)_\(fileIndex).\(songURL.pathExtension)"
+            destinationURL = songsFolder.appendingPathComponent(newName)
+            fileIndex += 1
+        }
+        
+        do {
+            // If the file is security-scoped (from iCloud, for example), wrap in startAccessingSecurityScopedResource.
+            if songURL.startAccessingSecurityScopedResource() {
+                defer { songURL.stopAccessingSecurityScopedResource() }
+                try fileManager.copyItem(at: songURL, to: destinationURL)
+            } else {
+                try fileManager.copyItem(at: songURL, to: destinationURL)
+            }
+            print("Song copied to: \(destinationURL)")
+            // Refresh the table view after saving.
+            loadSongsFromDocumentsFolder()
+        } catch {
+            print("Error copying song: \(error)")
+        }
+    }
+}
 
+// MARK: - UIDocumentPickerDelegate
+extension MusicViewController: UIDocumentPickerDelegate {
+    func documentPicker(_ controller: UIDocumentPickerViewController, didPickDocumentsAt urls: [URL]) {
+        guard let pickedURL = urls.first else { return }
+        saveSongToDocumentsFolder(songURL: pickedURL)
+    }
+}
+
+// MARK: - UITableViewDataSource, UITableViewDelegate
+extension MusicViewController: UITableViewDataSource, UITableViewDelegate {
     
-//    // MARK: - IBAction for picking a song from the Music Library
-//    @IBAction func pickSongFromLibraryButtonTapped(_ sender: UIBarButtonItem) {
-//        let mediaPicker = MPMediaPickerController(mediaTypes: .music)
-//        mediaPicker.delegate = self
-//        mediaPicker.allowsPickingMultipleItems = false
-//        present(mediaPicker, animated: true)
-//    }
-    
-    // MARK: - UITableViewDataSource Methods
-    
+    // Return the number of songs.
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return songURLs.count
     }
     
+    // Dequeue and configure the custom MusicTableViewCell.
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        // Use your custom cell
         guard let cell = tableView.dequeueReusableCell(withIdentifier: "SongCell", for: indexPath) as? MusicTableViewCell else {
             return UITableViewCell()
         }
-        
         let audioURL = songURLs[indexPath.row]
         cell.titleLabel.text = audioURL.lastPathComponent
         cell.iconImageView.image = UIImage(systemName: "music.note")
-        cell.durationLabel.text = ""
+        cell.durationLabel.text = ""  // You might load duration asynchronously similar to your video cell.
         return cell
     }
     
-    // MARK: - UITableViewDelegate Methods
-    
+    // When a song is selected, instantiate and push a PlayerViewController to play the song.
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let storyboard = UIStoryboard(name: "Main", bundle: nil)
         if let playerVC = storyboard.instantiateViewController(withIdentifier: "PlayerViewController") as? PlayerViewController {
@@ -139,30 +143,9 @@ class MusicViewController: UIViewController, UITableViewDelegate, UITableViewDat
             navigationController?.pushViewController(playerVC, animated: true)
         }
     }
-
     
+    // Set the cell height (for example, 1/4 of the table view's width)
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return tableView.frame.width / 4.0
-    }
-}
-
-// MARK: - MPMediaPickerControllerDelegate Methods
-
-extension MusicViewController: MPMediaPickerControllerDelegate {
-    func mediaPicker(_ mediaPicker: MPMediaPickerController, didPickMediaItems mediaItemCollection: MPMediaItemCollection) {
-        dismiss(animated: true, completion: nil)
-        
-        if let item = mediaItemCollection.items.first, let assetURL = item.assetURL {
-            songURLs.append(assetURL)
-            tableView.reloadData()
-        } else {
-            let alert = UIAlertController(title: "Error", message: "Could not get the selected song.", preferredStyle: .alert)
-            alert.addAction(UIAlertAction(title: "OK", style: .default))
-            present(alert, animated: true)
-        }
-    }
-    
-    func mediaPickerDidCancel(_ mediaPicker: MPMediaPickerController) {
-        dismiss(animated: true, completion: nil)
     }
 }
