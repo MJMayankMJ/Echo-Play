@@ -7,7 +7,6 @@
 
 import UIKit
 import AVKit
-import UniformTypeIdentifiers  // For UTType.movie (iOS 14.0+)
 
 class VideoViewController: UIViewController {
     
@@ -107,7 +106,6 @@ extension VideoViewController: UIDocumentPickerDelegate {
         }
         
         do {
-            // If it's a security-scoped URL (e.g., from iCloud), wrap in startAccessingSecurityScopedResource.
             if videoURL.startAccessingSecurityScopedResource() {
                 defer { videoURL.stopAccessingSecurityScopedResource() }
                 try fileManager.copyItem(at: videoURL, to: destinationURL)
@@ -115,7 +113,7 @@ extension VideoViewController: UIDocumentPickerDelegate {
                 try fileManager.copyItem(at: videoURL, to: destinationURL)
             }
             print("Video copied to: \(destinationURL)")
-            // Refresh the table by reloading folder contents.
+            // Refresh
             loadVideosFromDocumentsFolder()
         } catch {
             print("Error copying video: \(error)")
@@ -131,7 +129,6 @@ extension VideoViewController: UITableViewDataSource, UITableViewDelegate {
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        // Dequeue your custom VideoTableViewCell.
         guard let cell = tableView.dequeueReusableCell(withIdentifier: "VideoCell", for: indexPath) as? VideoTableViewCell else {
             return UITableViewCell()
         }

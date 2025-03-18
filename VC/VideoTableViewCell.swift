@@ -10,19 +10,18 @@ import AVFoundation
 
 class VideoTableViewCell: UITableViewCell {
     
-    @IBOutlet weak var thumbnailImageView: UIImageView!  // For the video thumbnail
+    @IBOutlet weak var thumbnailImageView: UIImageView!
     @IBOutlet weak var titleLabel: UILabel!
     @IBOutlet weak var durationLabel: UILabel!
     
-    // Track the currently configured video URL to prevent stale updates.
     private var currentVideoURL: URL?
     
     func configure(with videoURL: URL) {
         currentVideoURL = videoURL
         titleLabel.text = videoURL.lastPathComponent
         durationLabel.text = "Loading..."
-        // Set a placeholder image until the thumbnail is generated.
-        thumbnailImageView.image = UIImage(systemName: "video")
+        
+        thumbnailImageView.image = UIImage(systemName: "video.fill")
         
         Task {
             let asset = AVURLAsset(url: videoURL)

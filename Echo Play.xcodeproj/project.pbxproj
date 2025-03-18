@@ -29,6 +29,21 @@
 			path = "Echo Play";
 			sourceTree = "<group>";
 		};
+		86F360782D89620F00BF0B62 /* VC */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = VC;
+			sourceTree = "<group>";
+		};
+		86F3607A2D89624500BF0B62 /* Res */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Res;
+			sourceTree = "<group>";
+		};
+		86F3607B2D89625E00BF0B62 /* Storyboard */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Storyboard;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -47,6 +62,9 @@
 			children = (
 				86295C202D819B9200990BDC /* Echo Play */,
 				86295C1F2D819B9200990BDC /* Products */,
+				86F360782D89620F00BF0B62 /* VC */,
+				86F3607A2D89624500BF0B62 /* Res */,
+				86F3607B2D89625E00BF0B62 /* Storyboard */,
 			);
 			sourceTree = "<group>";
 		};
@@ -75,6 +93,9 @@
 			);
 			fileSystemSynchronizedGroups = (
 				86295C202D819B9200990BDC /* Echo Play */,
+				86F360782D89620F00BF0B62 /* VC */,
+				86F3607A2D89624500BF0B62 /* Res */,
+				86F3607B2D89625E00BF0B62 /* Storyboard */,
 			);
 			name = "Echo Play";
 			packageProductDependencies = (

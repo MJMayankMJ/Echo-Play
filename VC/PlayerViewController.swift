@@ -18,10 +18,9 @@ class PlayerViewController: UIViewController {
     @IBOutlet weak var currentTimeLabel: UILabel!
     @IBOutlet weak var totalTimeLabel: UILabel!
     @IBOutlet weak var titleLabel: UILabel!
-    @IBOutlet weak var thumbnailImageView: UIImageView!  // Displays extracted artwork
+    @IBOutlet weak var thumbnailImageView: UIImageView!
     @IBOutlet weak var playPauseButton: UIButton!
     
-    // Flag to check if the user is dragging the slider
     var isSliderDragging = false
     
     override func viewDidLoad() {
@@ -47,12 +46,12 @@ class PlayerViewController: UIViewController {
         updateThumbnail()
     }
     
-    // Called when the user begins touching/dragging the slider.
+    // begins touching/dragging
     @IBAction func sliderTouchDown(_ sender: UISlider) {
         isSliderDragging = true
     }
     
-    // Called when the user finishes dragging the slider.
+    // finishes dragging the slider
     @IBAction func sliderTouchUp(_ sender: UISlider) {
         isSliderDragging = false
         AudioPlayerManager.shared.seek(to: TimeInterval(sender.value))
@@ -106,7 +105,7 @@ class PlayerViewController: UIViewController {
         }
     }
     
-    /// Asynchronously extracts artwork from the asset's ID3 metadata using the new async API.
+    // Asynchronously extracts artwork from the asset's ID3 metadata using the new async API.
     private func extractArtwork(from asset: AVAsset) async -> UIImage? {
         do {
             let metadataItems = try await asset.loadMetadata(for: .id3Metadata)
@@ -132,7 +131,6 @@ extension PlayerViewController: AudioPlayerManagerDelegate {
     }
     
     func audioPlayerManager(_ manager: AudioPlayerManager, didUpdateDuration currentTime: TimeInterval) {
-        // Only update the slider if the user isn't dragging it.
         if !isSliderDragging {
             slider.value = Float(currentTime)
         }
