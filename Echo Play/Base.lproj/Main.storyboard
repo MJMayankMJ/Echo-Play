@@ -241,7 +241,8 @@
                             <slider opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" value="0.5" minValue="0.0" maxValue="1" translatesAutoresizingMaskIntoConstraints="NO" id="6aQ-CP-Gfy">
                                 <rect key="frame" x="23" y="492" width="347" height="31"/>
                                 <connections>
-                                    <action selector="sliderValueChanged:" destination="aKy-0B-465" eventType="valueChanged" id="bHU-3F-auS"/>
+                                    <action selector="sliderTouchDown:" destination="aKy-0B-465" eventType="valueChanged" id="vcB-i8-eHZ"/>
+                                    <action selector="sliderTouchUp:" destination="aKy-0B-465" eventType="valueChanged" id="kNk-m2-ygH"/>
                                 </connections>
                             </slider>
                         </subviews>
@@ -270,8 +271,9 @@
                     <navigationItem key="navigationItem" id="OiZ-So-Zgj"/>
                     <connections>
                         <outlet property="currentTimeLabel" destination="LVQ-HS-Gg4" id="QGX-WH-hcc"/>
-                        <outlet property="noteImageView" destination="7sh-mN-LXi" id="pBB-pd-jcL"/>
-                        <outlet property="slider" destination="6aQ-CP-Gfy" id="FhI-jH-Le5"/>
+                        <outlet property="playPauseButton" destination="68B-xN-wDH" id="hBG-Hq-i5n"/>
+                        <outlet property="slider" destination="6aQ-CP-Gfy" id="wBO-PX-Y63"/>
+                        <outlet property="thumbnailImageView" destination="7sh-mN-LXi" id="pNX-A2-CEl"/>
                         <outlet property="titleLabel" destination="RNV-Ix-Wdi" id="3TO-aH-kLg"/>
                         <outlet property="totalTimeLabel" destination="kXb-fS-WwG" id="2Ht-SL-ij5"/>
                     </connections>

@@ -91,7 +91,7 @@ class MusicViewController: UIViewController {
         }
         
         do {
-            // If the file is security-scoped (from iCloud, for example), wrap in startAccessingSecurityScopedResource.
+            // If the file is security-scoped (e.g., from iCloud), wrap in startAccessingSecurityScopedResource.
             if songURL.startAccessingSecurityScopedResource() {
                 defer { songURL.stopAccessingSecurityScopedResource() }
                 try fileManager.copyItem(at: songURL, to: destinationURL)
@@ -129,9 +129,7 @@ extension MusicViewController: UITableViewDataSource, UITableViewDelegate {
             return UITableViewCell()
         }
         let audioURL = songURLs[indexPath.row]
-        cell.titleLabel.text = audioURL.lastPathComponent
-        cell.iconImageView.image = UIImage(systemName: "music.note")
-        cell.durationLabel.text = ""  // You might load duration asynchronously similar to your video cell.
+        cell.configure(with: audioURL)
         return cell
     }
     

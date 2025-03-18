@@ -10,35 +10,38 @@ import AVFoundation
 
 class VideoTableViewCell: UITableViewCell {
     
-    @IBOutlet weak var thumbnailImageView: UIImageView!  // Renamed for clarity
+    @IBOutlet weak var thumbnailImageView: UIImageView!  // For the video thumbnail
     @IBOutlet weak var titleLabel: UILabel!
     @IBOutlet weak var durationLabel: UILabel!
     
-    // Keep track of the video URL to prevent stale async updates
+    // Track the currently configured video URL to prevent stale updates.
     private var currentVideoURL: URL?
     
     func configure(with videoURL: URL) {
         currentVideoURL = videoURL
         titleLabel.text = videoURL.lastPathComponent
         durationLabel.text = "Loading..."
-        thumbnailImageView.image = UIImage(systemName: "video") // placeholder while loading
+        // Set a placeholder image until the thumbnail is generated.
+        thumbnailImageView.image = UIImage(systemName: "video")
         
-        // Generate thumbnail and duration asynchronously
         Task {
             let asset = AVURLAsset(url: videoURL)
-            // Generate thumbnail from first frame
             let imageGenerator = AVAssetImageGenerator(asset: asset)
             imageGenerator.appliesPreferredTrackTransform = true
             let time = CMTimeMake(value: 0, timescale: 1)
-            var thumbnail: UIImage?
-            do {
-                let cgImage = try imageGenerator.copyCGImage(at: time, actualTime: nil)
-                thumbnail = UIImage(cgImage: cgImage)
-            } catch {
-                print("Error generating thumbnail: \(error)")
+            
+            // Generate the thumbnail asynchronously using the new API.
+            let thumbnail: UIImage? = await withCheckedContinuation { continuation in
+                imageGenerator.generateCGImagesAsynchronously(forTimes: [NSValue(time: time)]) { requestedTime, cgImage, actualTime, result, error in
+                    if let cgImage = cgImage, error == nil {
+                        continuation.resume(returning: UIImage(cgImage: cgImage))
+                    } else {
+                        continuation.resume(returning: nil)
+                    }
+                }
             }
             
-            // Load duration asynchronously using new async/await API
+            // Load duration asynchronously using async/await.
             do {
                 let cmDuration = try await asset.load(.duration)
                 let durationInSeconds = CMTimeGetSeconds(cmDuration)
@@ -61,7 +64,7 @@ class VideoTableViewCell: UITableViewCell {
         }
     }
     
-    /// Formats seconds into a time string (mm:ss or hh:mm:ss)
+    // Formats a duration (in seconds) into a string (mm:ss or hh:mm:ss).
     private func formatTime(_ seconds: Double) -> String {
         guard !seconds.isNaN else { return "00:00" }
         let totalSeconds = Int(seconds)
