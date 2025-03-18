@@ -17,4 +17,4 @@ This project is a simple iOS Music Player App that demonstrates how to use AVFou
 - Xcode 14+
 - Swift 5+
 
-**Note:** In this project my fill attention was to learn these new things but the code is quite re used and is not properly maintained in any form of arch. ; But you would find the comments quite helpful
+**Note:** In this project my attention was to learn these new things but the code is quite duplicated and is not properly maintained in any form of arch. ; But you would find the comments quite helpful
