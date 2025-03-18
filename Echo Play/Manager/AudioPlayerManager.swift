@@ -125,7 +125,7 @@ class AudioPlayerManager: NSObject {
     // MARK: - Metadata and Artwork (iOS 18+)
     
     // load metadata and generates a thumbnail image from the first frame.
-    private func loadMetadataAndArtwork(for url: URL) async {
+    func loadMetadataAndArtwork(for url: URL) async {
         let asset = AVURLAsset(url: url)
         
         do {
@@ -160,7 +160,7 @@ class AudioPlayerManager: NSObject {
         }
     }
     
-    private func generateThumbnail(asset: AVURLAsset) async -> UIImage {
+    func generateThumbnail(asset: AVURLAsset) async -> UIImage {
         let generator = AVAssetImageGenerator(asset: asset)
         generator.appliesPreferredTrackTransform = true
         
@@ -182,7 +182,7 @@ class AudioPlayerManager: NSObject {
     
     // MARK: - Now Playing Info
     
-    private func updateNowPlayingInfo() {
+    func updateNowPlayingInfo() {
         guard let player = player else { return }
         
         var nowPlayingInfo: [String: Any] = [:]
