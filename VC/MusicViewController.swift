@@ -42,20 +42,6 @@ class MusicViewController: UIViewController {
     }
     
     // MARK: - Load MP3 Files from "Songs" Folder
-//    private func loadSongsFromDocumentsFolder() {
-//        let fileManager = FileManager.default
-//        guard let documentsDirectory = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
-//        let songsFolder = documentsDirectory.appendingPathComponent("Songs")
-//        
-//        do {
-//            let allFiles = try fileManager.contentsOfDirectory(at: songsFolder, includingPropertiesForKeys: nil, options: [])
-//            let mp3Files = allFiles.filter { $0.pathExtension.lowercased() == "mp3" }
-//            songURLs = mp3Files
-//            tableView.reloadData()
-//        } catch {
-//            print("Error reading Songs folder: \(error)")
-//        }
-//    }
     private func loadSongsFromDocumentsFolder() {
         let fileManager = FileManager.default
         guard let documentsDirectory = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else { return }

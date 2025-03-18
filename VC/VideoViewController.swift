@@ -25,35 +25,6 @@ class VideoViewController: UIViewController {
     
     // MARK: - Load Videos
     
-//    private func loadVideosFromDocumentsFolder() {
-//        let fileManager = FileManager.default
-//        
-//        guard let documentsDirectory = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else {
-//            return
-//        }
-//        let videoFolder = documentsDirectory.appendingPathComponent("Video")
-//        
-//        // Create the folder if it doesn't exist
-//        if !fileManager.fileExists(atPath: videoFolder.path) {
-//            do {
-//                try fileManager.createDirectory(at: videoFolder, withIntermediateDirectories: true)
-//            } catch {
-//                print("Error creating Video folder: \(error)")
-//                return
-//            }
-//        }
-//        
-//        do {
-//            let allFiles = try fileManager.contentsOfDirectory(at: videoFolder, includingPropertiesForKeys: nil, options: [])
-//            let videoExtensions = ["mp4", "mov", "m4v"]
-//            videoURLs = allFiles.filter { videoExtensions.contains($0.pathExtension.lowercased()) }
-//            tableView.reloadData()
-//        } catch {
-//            print("Error reading Video folder: \(error)")
-//        }
-//    }
-//
-    
     private func loadVideosFromDocumentsFolder() {
         let fileManager = FileManager.default
         guard let documentsDirectory = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else {
