@@ -11,7 +11,14 @@ import AVKit
 
 class PlayerViewController: UIViewController {
     
-    var audioURL: URL?
+    var allSongURLs: [URL] = []
+    // Which song index is currently playing
+    var currentIndex: Int = 0
+    
+    var audioURL: URL? {
+        guard currentIndex < allSongURLs.count else { return nil }
+        return allSongURLs[currentIndex]
+    }
     
     // MARK: - Outlets
     @IBOutlet weak var slider: UISlider!
@@ -31,31 +38,29 @@ class PlayerViewController: UIViewController {
         slider.minimumValue = 0
         slider.value = 0
         
-        let duration = AudioPlayerManager.shared.getDuration()
-        slider.maximumValue = Float(duration)
-        totalTimeLabel.text = formatTime(duration)
-        titleLabel.text = AudioPlayerManager.shared.audioTitle
-        
+        // Start playing the selected track
         if let url = audioURL {
             AudioPlayerManager.shared.playSound(from: url)
-        } else if let bundledURL = Bundle.main.url(forResource: "YourPoisonNCS", withExtension: "mp3") {
-            AudioPlayerManager.shared.playSound(from: bundledURL)
+        } else {
+            // ... fallback
         }
         
-        updatePlayPauseButton()
+        updateUI()
         updateThumbnail()
     }
     
-    // begins touching/dragging
+    // MARK: - Slider Interaction
+    
     @IBAction func sliderTouchDown(_ sender: UISlider) {
         isSliderDragging = true
     }
     
-    // finishes dragging the slider
     @IBAction func sliderTouchUp(_ sender: UISlider) {
         isSliderDragging = false
         AudioPlayerManager.shared.seek(to: TimeInterval(sender.value))
     }
+    
+    // MARK: - Playback Controls
     
     @IBAction func playPauseTapped(_ sender: UIButton) {
         if AudioPlayerManager.shared.isPlaying {
@@ -67,11 +72,39 @@ class PlayerViewController: UIViewController {
     }
     
     @IBAction func prevTapped(_ sender: UIButton) {
-        AudioPlayerManager.shared.stop()
+        guard currentIndex > 0 else { return }
+        currentIndex -= 1
+        playCurrentIndex()
     }
     
     @IBAction func nextTapped(_ sender: UIButton) {
-        AudioPlayerManager.shared.stop()
+        guard currentIndex < allSongURLs.count - 1 else { return }
+        currentIndex += 1
+        playCurrentIndex()
+    }
+    
+    private func playCurrentIndex() {
+        if let url = audioURL {
+            AudioPlayerManager.shared.playSound(from: url)
+        }
+        // Reset slider
+        slider.value = 0
+        currentTimeLabel.text = "00:00"
+        updateUI()
+        updateThumbnail()
+    }
+    
+    // MARK: - UI Updates
+    
+    private func updateUI() {
+        // Update the max slider value to the new track’s duration
+        let duration = AudioPlayerManager.shared.getDuration()
+        slider.maximumValue = Float(duration)
+        totalTimeLabel.text = formatTime(duration)
+        
+        // Update the title label to the manager’s audioTitle
+        titleLabel.text = AudioPlayerManager.shared.audioTitle
+        updatePlayPauseButton()
     }
     
     private func updatePlayPauseButton() {
@@ -85,7 +118,8 @@ class PlayerViewController: UIViewController {
         return String(format: "%02d:%02d", minutes, seconds)
     }
     
-    // Asynchronously updates the thumbnail image using the new async load(.dataValue) API.
+    // MARK: - Thumbnail Artwork
+    
     private func updateThumbnail() {
         guard let url = audioURL else {
             thumbnailImageView.image = UIImage(systemName: "music.note")
@@ -105,7 +139,6 @@ class PlayerViewController: UIViewController {
         }
     }
     
-    // Asynchronously extracts artwork from the asset's ID3 metadata using the new async API.
     private func extractArtwork(from asset: AVAsset) async -> UIImage? {
         do {
             let metadataItems = try await asset.loadMetadata(for: .id3Metadata)
@@ -124,6 +157,7 @@ class PlayerViewController: UIViewController {
     }
 }
 
+// MARK: - AudioPlayerManagerDelegate
 extension PlayerViewController: AudioPlayerManagerDelegate {
     func audioPlayerManagerDidChangeState(_ manager: AudioPlayerManager) {
         titleLabel.text = manager.audioTitle
@@ -131,10 +165,12 @@ extension PlayerViewController: AudioPlayerManagerDelegate {
     }
     
     func audioPlayerManager(_ manager: AudioPlayerManager, didUpdateDuration currentTime: TimeInterval) {
+        // Only update the slider if the user isn't dragging it
         if !isSliderDragging {
             slider.value = Float(currentTime)
         }
         currentTimeLabel.text = formatTime(currentTime)
+        
         let total = manager.getDuration()
         totalTimeLabel.text = formatTime(total)
     }

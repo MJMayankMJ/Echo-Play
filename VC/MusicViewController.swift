@@ -128,11 +128,15 @@ extension MusicViewController: UITableViewDataSource, UITableViewDelegate {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let storyboard = UIStoryboard(name: "Main", bundle: nil)
         if let playerVC = storyboard.instantiateViewController(withIdentifier: "PlayerViewController") as? PlayerViewController {
-            playerVC.audioURL = songURLs[indexPath.row]
+            // Pass the entire list of songs
+            playerVC.allSongURLs = songURLs
+            // Pass the currently selected index
+            playerVC.currentIndex = indexPath.row
+            
             navigationController?.pushViewController(playerVC, animated: true)
         }
     }
-    
+
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return tableView.frame.width / 4.0
     }
