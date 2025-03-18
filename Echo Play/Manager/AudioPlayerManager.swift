@@ -35,13 +35,13 @@ class AudioPlayerManager: NSObject {
         return player?.isPlaying ?? false
     }
     
+    // Loaded metadata (will be updated if needed elsewhere)
     private var loadedTitle: String = "Unknown Title"
     private var loadedArtist: String = "Unknown Artist"
     private var loadedAlbum: String = "Unknown Album"
     private var loadedArtwork: UIImage = UIImage(systemName: "music.note.list")!
     
     // MARK: - Init
-    
     private override init() {
         super.init()
         NotificationCenter.default.addObserver(
@@ -50,6 +50,45 @@ class AudioPlayerManager: NSObject {
             name: AVAudioSession.interruptionNotification,
             object: nil
         )
+        setupRemoteCommands()
+        UIApplication.shared.beginReceivingRemoteControlEvents()
+    }
+    
+    // MARK: - Remote Commands
+    private func setupRemoteCommands() {
+        let commandCenter = MPRemoteCommandCenter.shared()
+        
+        commandCenter.playCommand.addTarget(self, action: #selector(handlePlayCommand(_:)))
+        commandCenter.pauseCommand.addTarget(self, action: #selector(handlePauseCommand(_:)))
+        commandCenter.nextTrackCommand.addTarget(self, action: #selector(handleNextTrackCommand(_:)))
+        commandCenter.previousTrackCommand.addTarget(self, action: #selector(handlePreviousTrackCommand(_:)))
+        commandCenter.changePlaybackPositionCommand.addTarget(self, action: #selector(handleChangePlaybackPositionCommand(_:)))
+    }
+    
+    @objc private func handlePlayCommand(_ event: MPRemoteCommandEvent) -> MPRemoteCommandHandlerStatus {
+        play()
+        return .success
+    }
+    
+    @objc private func handlePauseCommand(_ event: MPRemoteCommandEvent) -> MPRemoteCommandHandlerStatus {
+        pause()
+        return .success
+    }
+    
+    @objc private func handleNextTrackCommand(_ event: MPRemoteCommandEvent) -> MPRemoteCommandHandlerStatus {
+        NotificationCenter.default.post(name: .didRequestNextTrack, object: nil)
+        return .success
+    }
+    
+    @objc private func handlePreviousTrackCommand(_ event: MPRemoteCommandEvent) -> MPRemoteCommandHandlerStatus {
+        NotificationCenter.default.post(name: .didRequestPreviousTrack, object: nil)
+        return .success
+    }
+    
+    @objc private func handleChangePlaybackPositionCommand(_ event: MPChangePlaybackPositionCommandEvent) -> MPRemoteCommandHandlerStatus {
+        let newTime = event.positionTime
+        seek(to: newTime)
+        return .success
     }
     
     @objc private func audioSessionInterrupted(notification: Notification) {
@@ -67,7 +106,6 @@ class AudioPlayerManager: NSObject {
     }
     
     // MARK: - Public Audio Control
-    
     func playSound(from audioURL: URL) {
         stop()
         configureAudioSession()
@@ -78,10 +116,8 @@ class AudioPlayerManager: NSObject {
             player?.delegate = self
             player?.play()
             
-            Task {
-                await loadMetadataAndArtwork(for: audioURL)
-                updateNowPlayingInfo()
-            }
+            // Removed metadata/artwork loading here as the view controller (or cell) now handles it.
+            updateNowPlayingInfo()
             
             startDurationUpdateTimer()
             delegate?.audioPlayerManagerDidChangeState?(self)
@@ -112,6 +148,7 @@ class AudioPlayerManager: NSObject {
     func seek(to time: TimeInterval) {
         player?.currentTime = time
         delegate?.audioPlayerManagerDidChangeState?(self)
+        updateNowPlayingInfo()
     }
     
     func getCurrentTime() -> TimeInterval {
@@ -122,100 +159,52 @@ class AudioPlayerManager: NSObject {
         return player?.duration ?? 0
     }
     
-    // MARK: - Metadata and Artwork (iOS 18+)
-    
-    // load metadata and generates a thumbnail image from the first frame.
-    func loadMetadataAndArtwork(for url: URL) async {
-        let asset = AVURLAsset(url: url)
-        
-        do {
-            // 1. load metadata
-            let metadataItems = try await asset.loadMetadata(for: .id3Metadata)
-            for item in metadataItems {
-                guard let key = item.commonKey else { continue }
-                
-                switch key {
-                case .commonKeyTitle:
-                    if let titleValue = try? await item.load(.value) as? String {
-                        loadedTitle = titleValue
-                        audioTitle = titleValue
-                    }
-                case .commonKeyArtist:
-                    if let artistValue = try? await item.load(.value) as? String {
-                        loadedArtist = artistValue
-                    }
-                case .commonKeyAlbumName:
-                    if let albumValue = try? await item.load(.value) as? String {
-                        loadedAlbum = albumValue
-                    }
-                default:
-                    break
-                }
-            }
-            
-            // 2. Generate a thumbnail image from the first frame
-            loadedArtwork = await generateThumbnail(asset: asset)
-        } catch {
-            print("Error loading metadata: \(error)")
-        }
-    }
-    
-    func generateThumbnail(asset: AVURLAsset) async -> UIImage {
-        let generator = AVAssetImageGenerator(asset: asset)
-        generator.appliesPreferredTrackTransform = true
-        
-        // We'll request a frame at time = 0
-        let time = CMTimeMake(value: 0, timescale: 1)
-        
-        return await withCheckedContinuation { continuation in
-            generator.generateCGImagesAsynchronously(forTimes: [NSValue(time: time)]) {
-                requestedTime, cgImage, actualTime, result, error in
-                guard let cgImage = cgImage, error == nil else {
-                    continuation.resume(returning: UIImage(systemName: "music.note.list")!)
-                    return
-                }
-
-                continuation.resume(returning: UIImage(cgImage: cgImage))
-            }
-        }
-    }
-    
     // MARK: - Now Playing Info
-    
+//    func updateNowPlayingInfo() {
+//        guard let player = player else { return }
+//        
+//        var nowPlayingInfo: [String: Any] = [:]
+//        nowPlayingInfo[MPMediaItemPropertyTitle] = loadedTitle
+//        nowPlayingInfo[MPMediaItemPropertyArtist] = loadedArtist
+//        nowPlayingInfo[MPMediaItemPropertyAlbumTitle] = loadedAlbum
+//        nowPlayingInfo[MPMediaItemPropertyArtwork] = MPMediaItemArtwork(boundsSize: loadedArtwork.size) { _ in
+//            return self.loadedArtwork
+//        }
+//        nowPlayingInfo[MPMediaItemPropertyPlaybackDuration] = player.duration
+//        nowPlayingInfo[MPNowPlayingInfoPropertyElapsedPlaybackTime] = player.currentTime
+//        nowPlayingInfo[MPNowPlayingInfoPropertyPlaybackRate] = player.isPlaying ? 1.0 : 0.0
+//        
+//        MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
+//    }
     func updateNowPlayingInfo() {
         guard let player = player else { return }
         
         var nowPlayingInfo: [String: Any] = [:]
-        nowPlayingInfo[MPMediaItemPropertyTitle] = loadedTitle
+        
+        // 1) Use `audioTitle` here
+        nowPlayingInfo[MPMediaItemPropertyTitle] = audioTitle
+        
         nowPlayingInfo[MPMediaItemPropertyArtist] = loadedArtist
         nowPlayingInfo[MPMediaItemPropertyAlbumTitle] = loadedAlbum
-        
-        nowPlayingInfo[MPMediaItemPropertyArtwork] = MPMediaItemArtwork(
-            boundsSize: loadedArtwork.size,
-            requestHandler: { _ in
-                return self.loadedArtwork
-            }
-        )
-        
+        nowPlayingInfo[MPMediaItemPropertyArtwork] = MPMediaItemArtwork(boundsSize: loadedArtwork.size) { _ in
+            return self.loadedArtwork
+        }
         nowPlayingInfo[MPMediaItemPropertyPlaybackDuration] = player.duration
         nowPlayingInfo[MPNowPlayingInfoPropertyElapsedPlaybackTime] = player.currentTime
         nowPlayingInfo[MPNowPlayingInfoPropertyPlaybackRate] = player.isPlaying ? 1.0 : 0.0
         
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nowPlayingInfo
     }
+
 }
 
 // MARK: - Timer Updates
-
 extension AudioPlayerManager {
     private func startDurationUpdateTimer() {
         stopDurationUpdateTimer()
         durationUpdateTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
-            guard let self = self,
-                  let currentTime = self.player?.currentTime,
-                  self.isPlaying else { return }
-            
-            self.delegate?.audioPlayerManager?(self, didUpdateDuration: currentTime)
+            guard let self = self, let _ = self.player, self.isPlaying else { return }
+            self.delegate?.audioPlayerManager?(self, didUpdateDuration: self.player!.currentTime)
             self.updateNowPlayingInfo()
         }
     }
@@ -227,9 +216,14 @@ extension AudioPlayerManager {
 }
 
 // MARK: - AVAudioPlayerDelegate
-
 extension AudioPlayerManager: AVAudioPlayerDelegate {
     func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
         delegate?.audioPlayerManagerDidComplete?(self)
     }
+}
+
+// MARK: - Notification Names
+extension Notification.Name {
+    static let didRequestNextTrack = Notification.Name("didRequestNextTrack")
+    static let didRequestPreviousTrack = Notification.Name("didRequestPreviousTrack")
 }
