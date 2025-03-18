@@ -25,9 +25,37 @@ class VideoViewController: UIViewController {
     
     // MARK: - Load Videos
     
+//    private func loadVideosFromDocumentsFolder() {
+//        let fileManager = FileManager.default
+//        
+//        guard let documentsDirectory = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else {
+//            return
+//        }
+//        let videoFolder = documentsDirectory.appendingPathComponent("Video")
+//        
+//        // Create the folder if it doesn't exist
+//        if !fileManager.fileExists(atPath: videoFolder.path) {
+//            do {
+//                try fileManager.createDirectory(at: videoFolder, withIntermediateDirectories: true)
+//            } catch {
+//                print("Error creating Video folder: \(error)")
+//                return
+//            }
+//        }
+//        
+//        do {
+//            let allFiles = try fileManager.contentsOfDirectory(at: videoFolder, includingPropertiesForKeys: nil, options: [])
+//            let videoExtensions = ["mp4", "mov", "m4v"]
+//            videoURLs = allFiles.filter { videoExtensions.contains($0.pathExtension.lowercased()) }
+//            tableView.reloadData()
+//        } catch {
+//            print("Error reading Video folder: \(error)")
+//        }
+//    }
+//
+    
     private func loadVideosFromDocumentsFolder() {
         let fileManager = FileManager.default
-        
         guard let documentsDirectory = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else {
             return
         }
@@ -47,12 +75,28 @@ class VideoViewController: UIViewController {
             let allFiles = try fileManager.contentsOfDirectory(at: videoFolder, includingPropertiesForKeys: nil, options: [])
             let videoExtensions = ["mp4", "mov", "m4v"]
             videoURLs = allFiles.filter { videoExtensions.contains($0.pathExtension.lowercased()) }
+            
+            if videoURLs.isEmpty {
+                let messageLabel = UILabel(frame: CGRect(x: 0,
+                                                         y: 0,
+                                                         width: tableView.bounds.size.width,
+                                                         height: tableView.bounds.size.height))
+                messageLabel.text = "No videos added."
+                messageLabel.textColor = .gray
+                messageLabel.textAlignment = .center
+                messageLabel.font = UIFont.systemFont(ofSize: 20)
+                messageLabel.numberOfLines = 0
+                tableView.backgroundView = messageLabel
+            } else {
+                tableView.backgroundView = nil
+            }
+            
             tableView.reloadData()
         } catch {
             print("Error reading Video folder: \(error)")
         }
     }
-    
+
     // MARK: - Add Video (+ Button)
     
     @IBAction func addVideoButtonTapped(_ sender: UIBarButtonItem) {
