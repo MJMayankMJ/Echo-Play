@@ -122,20 +122,33 @@
                                                     <nil key="textColor"/>
                                                     <nil key="highlightedColor"/>
                                                 </label>
-                                                <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="mXM-wp-82Y">
-                                                    <rect key="frame" x="100" y="73" width="42" height="21"/>
-                                                    <fontDescription key="fontDescription" type="system" pointSize="17"/>
-                                                    <nil key="textColor"/>
-                                                    <nil key="highlightedColor"/>
-                                                </label>
+                                                <stackView opaque="NO" contentMode="scaleToFill" spacing="188" translatesAutoresizingMaskIntoConstraints="NO" id="3DA-JM-rlH">
+                                                    <rect key="frame" x="100" y="60.666666666666657" width="288" height="34.333333333333343"/>
+                                                    <subviews>
+                                                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Label" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="mXM-wp-82Y">
+                                                            <rect key="frame" x="0.0" y="0.0" width="41.333333333333336" height="34.333333333333336"/>
+                                                            <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                                            <nil key="textColor"/>
+                                                            <nil key="highlightedColor"/>
+                                                        </label>
+                                                        <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="YOg-Kl-av7">
+                                                            <rect key="frame" x="229.33333333333329" y="0.0" width="58.666666666666657" height="34.333333333333336"/>
+                                                            <state key="normal" title="Button"/>
+                                                            <buttonConfiguration key="configuration" style="plain" image="star" catalog="system"/>
+                                                            <connections>
+                                                                <action selector="starButtonTapped:" destination="VWi-B6-FS6" eventType="touchUpInside" id="u9O-zs-HUo"/>
+                                                            </connections>
+                                                        </button>
+                                                    </subviews>
+                                                </stackView>
                                             </subviews>
                                             <constraints>
-                                                <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="mXM-wp-82Y" secondAttribute="trailing" constant="20" symbolic="YES" id="2BT-Ff-CDj"/>
-                                                <constraint firstItem="mXM-wp-82Y" firstAttribute="bottom" secondItem="GxB-Lf-1VI" secondAttribute="bottomMargin" constant="5" id="85M-DX-WA4"/>
+                                                <constraint firstAttribute="trailing" secondItem="3DA-JM-rlH" secondAttribute="trailing" constant="5" id="Ez0-Jl-CeW"/>
                                                 <constraint firstItem="cFd-y5-ljv" firstAttribute="top" secondItem="GxB-Lf-1VI" secondAttribute="top" constant="5" id="GSZ-J2-tm1"/>
+                                                <constraint firstItem="3DA-JM-rlH" firstAttribute="leading" secondItem="cFd-y5-ljv" secondAttribute="trailing" constant="5" id="M9g-GV-vPn"/>
                                                 <constraint firstAttribute="trailingMargin" secondItem="YbV-mc-Hta" secondAttribute="trailing" constant="5" id="RLs-cr-9zl"/>
                                                 <constraint firstItem="cFd-y5-ljv" firstAttribute="leading" secondItem="GxB-Lf-1VI" secondAttribute="leading" constant="5" id="SMI-Bu-xYQ"/>
-                                                <constraint firstItem="mXM-wp-82Y" firstAttribute="leading" secondItem="cFd-y5-ljv" secondAttribute="trailing" constant="5" id="hef-Li-aPf"/>
+                                                <constraint firstAttribute="bottom" secondItem="3DA-JM-rlH" secondAttribute="bottom" constant="5" id="ffa-f8-Jp5"/>
                                                 <constraint firstItem="YbV-mc-Hta" firstAttribute="top" secondItem="GxB-Lf-1VI" secondAttribute="topMargin" constant="5" id="pl0-ES-Lny"/>
                                                 <constraint firstAttribute="bottom" secondItem="cFd-y5-ljv" secondAttribute="bottom" constant="5" id="w8Q-BS-ENd"/>
                                                 <constraint firstItem="YbV-mc-Hta" firstAttribute="leading" secondItem="cFd-y5-ljv" secondAttribute="trailing" constant="5" id="wrn-Ym-P3N"/>
@@ -144,6 +157,7 @@
                                         <connections>
                                             <outlet property="durationLabel" destination="mXM-wp-82Y" id="8VD-6G-fXw"/>
                                             <outlet property="iconImageView" destination="cFd-y5-ljv" id="BSs-xD-xSW"/>
+                                            <outlet property="starButton" destination="YOg-Kl-av7" id="fK7-fm-egf"/>
                                             <outlet property="titleLabel" destination="YbV-mc-Hta" id="YsY-lN-CBI"/>
                                         </connections>
                                     </tableViewCell>
@@ -160,6 +174,17 @@
                         </constraints>
                     </view>
                     <navigationItem key="navigationItem" title="Songs" id="XPp-tn-wpj">
+                        <barButtonItem key="leftBarButtonItem" id="N2X-vO-UER">
+                            <button key="customView" opaque="NO" contentMode="scaleToFill" misplaced="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" id="SJN-HF-LdZ">
+                                <rect key="frame" x="16" y="5" width="92.666666666666671" height="34.333333333333336"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <state key="normal" title="Button"/>
+                                <buttonConfiguration key="configuration" style="plain" title="Favorites"/>
+                            </button>
+                            <connections>
+                                <action selector="favoritesButtonTapped:" destination="afS-pZ-wf1" id="2GE-UA-6lJ"/>
+                            </connections>
+                        </barButtonItem>
                         <barButtonItem key="rightBarButtonItem" title="Item" image="plus" catalog="system" id="PmJ-cQ-SRa">
                             <connections>
                                 <action selector="addSongButtonTapped:" destination="afS-pZ-wf1" id="W4o-Iz-8gA"/>
@@ -346,6 +371,7 @@
         <image name="music.note.list" catalog="system" width="128" height="115"/>
         <image name="play.fill" catalog="system" width="120" height="128"/>
         <image name="plus" catalog="system" width="128" height="113"/>
+        <image name="star" catalog="system" width="128" height="116"/>
         <image name="video.fill" catalog="system" width="128" height="81"/>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>

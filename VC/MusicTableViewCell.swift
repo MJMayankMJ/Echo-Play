@@ -8,11 +8,18 @@
 import UIKit
 import AVFoundation
 
+protocol MusicTableViewCellDelegate: AnyObject {
+    func musicTableViewCell(_ cell: MusicTableViewCell, didTapFavoriteFor url: URL)
+}
+
 class MusicTableViewCell: UITableViewCell {
     
     @IBOutlet weak var iconImageView: UIImageView!
     @IBOutlet weak var titleLabel: UILabel!
     @IBOutlet weak var durationLabel: UILabel!
+    @IBOutlet weak var starButton: UIButton!
+    
+    weak var delegate: MusicTableViewCellDelegate?
     
     private var currentAudioURL: URL?
     
@@ -21,7 +28,7 @@ class MusicTableViewCell: UITableViewCell {
         titleLabel.text = audioURL.lastPathComponent
         durationLabel.text = "Loading..."
         
-        // Asynchronously load artwork and duration from the audio file's metadata.
+        // Asynchronously load artwork and duration
         Task {
             let asset = AVURLAsset(url: audioURL)
             
@@ -38,7 +45,6 @@ class MusicTableViewCell: UITableViewCell {
                 print("Error loading duration: \(error)")
             }
             
-            // Update UI on the main thread if the cell is still displaying this audioURL (it is from gpt as i still dont get this new ios thing but better than depricated version of mine i guess
             await MainActor.run {
                 if self.currentAudioURL == audioURL {
                     self.iconImageView.image = artwork ?? UIImage(systemName: "music.note")
@@ -48,7 +54,18 @@ class MusicTableViewCell: UITableViewCell {
         }
     }
     
-    // Asynchronously extracts artwork from the asset's ID3 metadata using the new async API.
+    func updateStar(isFavorite: Bool) {
+        let starImage = isFavorite ? UIImage(systemName: "star.fill") : UIImage(systemName: "star")
+        starButton.setImage(starImage, for: .normal)
+    }
+    
+    @IBAction func starButtonTapped(_ sender: UIButton) {
+        print("Star button tapped")
+        guard let url = currentAudioURL else { return }
+        delegate?.musicTableViewCell(self, didTapFavoriteFor: url)
+    }
+    
+    // Asynchronously extracts artwork from the asset's ID3 metadata
     private func extractArtwork(from asset: AVAsset) async -> UIImage? {
         do {
             let metadataItems = try await asset.loadMetadata(for: .id3Metadata)
@@ -66,7 +83,6 @@ class MusicTableViewCell: UITableViewCell {
         return nil
     }
     
-    // Formats seconds into a time string (mm:ss or hh:mm:ss).
     private func formatTime(_ seconds: Double) -> String {
         guard !seconds.isNaN else { return "00:00" }
         let totalSeconds = Int(seconds)
