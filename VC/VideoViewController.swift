@@ -158,6 +158,8 @@ extension VideoViewController: UITableViewDataSource, UITableViewDelegate {
         let player = AVPlayer(url: videoURL)
         let playerVC = AVPlayerViewController()
         playerVC.player = player
+        playerVC.allowsPictureInPicturePlayback = true
+        playerVC.delegate = self
         
         present(playerVC, animated: true) {
             player.play()
@@ -166,5 +168,21 @@ extension VideoViewController: UITableViewDataSource, UITableViewDelegate {
     
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return tableView.frame.height / 6.0
+    }
+}
+
+//MARK: - PIP
+
+extension VideoViewController: AVPlayerViewControllerDelegate {
+    func playerViewControllerWillStartPictureInPicture(_ playerViewController: AVPlayerViewController) {
+        print("PiP Started")
+    }
+    
+    func playerViewControllerDidStopPictureInPicture(_ playerViewController: AVPlayerViewController) {
+        print("PiP Stopped")
+    }
+    
+    func playerViewControllerShouldAutomaticallyDismissAtPictureInPictureStart(_ playerViewController: AVPlayerViewController) -> Bool {
+        return true  // Automatically dismiss when PiP starts
     }
 }

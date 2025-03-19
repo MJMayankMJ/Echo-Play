@@ -12,7 +12,8 @@ import MediaPlayer
 class MusicViewController: UIViewController {
 
     @IBOutlet weak var tableView: UITableView!
-
+    @IBOutlet weak var favorite: UIButton!
+    
     var songURLs: [URL] = []
 
     // Flag that determines if we're showing "all songs" or "favorites"
@@ -40,9 +41,9 @@ class MusicViewController: UIViewController {
     }
 
     // MARK: - Favorites Button Action
-    @IBAction func favoritesButtonTapped(_ sender: UIBarButtonItem) {
-        // Toggle the favorites flag.
+    @IBAction func favoritesButtonTapped(_ sender: UIButton) {
         isShowingFavorites.toggle()
+        sender.setTitle(isShowingFavorites ? "All Songs" : "Favorites", for: .normal)
     }
 
     // MARK: - Create "Songs" Folder at App Launch

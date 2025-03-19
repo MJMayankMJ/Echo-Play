@@ -175,15 +175,15 @@
                     </view>
                     <navigationItem key="navigationItem" title="Songs" id="XPp-tn-wpj">
                         <barButtonItem key="leftBarButtonItem" id="N2X-vO-UER">
-                            <button key="customView" opaque="NO" contentMode="scaleToFill" misplaced="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" id="SJN-HF-LdZ">
+                            <button key="customView" opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" id="SJN-HF-LdZ">
                                 <rect key="frame" x="16" y="5" width="92.666666666666671" height="34.333333333333336"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
                                 <state key="normal" title="Button"/>
                                 <buttonConfiguration key="configuration" style="plain" title="Favorites"/>
+                                <connections>
+                                    <action selector="favoritesButtonTapped:" destination="afS-pZ-wf1" eventType="touchUpInside" id="Z5w-Nk-DnB"/>
+                                </connections>
                             </button>
-                            <connections>
-                                <action selector="favoritesButtonTapped:" destination="afS-pZ-wf1" id="2GE-UA-6lJ"/>
-                            </connections>
                         </barButtonItem>
                         <barButtonItem key="rightBarButtonItem" title="Item" image="plus" catalog="system" id="PmJ-cQ-SRa">
                             <connections>
@@ -192,6 +192,7 @@
                         </barButtonItem>
                     </navigationItem>
                     <connections>
+                        <outlet property="favorite" destination="SJN-HF-LdZ" id="p3f-KQ-H3y"/>
                         <outlet property="tableView" destination="das-Xi-Lp3" id="Vbq-rJ-ccg"/>
                     </connections>
                 </viewController>
